@@ -1,1 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Clementina IA - San Jorge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+        }
+        .vademecum-card {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 4px solid #2E7D32;
+        }
+        .report-box {
+            background: white;
+            color: #1a1a1a;
+            border-left: 10px solid #2E7D32;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .btn-primary {
+            background: #2E7D32;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+        }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            text-decoration: none;
+        }
+        #preview-img {
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Encabezado -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">🚜 LA CLEMENTINA IA</h1>
+            <p class="text-xl opacity-90">San Jorge, Santa Fe</p>
+        </header>
 
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Columna Izquierda: Vademécum -->
+            <div class="md:col-span-1 space-y-4">
+                <div class="glass-panel p-5">
+                    <h2 class="text-lg font-bold mb-4 border-b border-white/20 pb-2">
+                        <i class="fas fa-book-medical mr-2"></i>VADEMÉCUM
+                    </h2>
+                    <div class="space-y-3 text-sm">
+                        <div class="vademecum-card p-2 rounded">
+                            <span class="text-green-400 font-bold block">ADHERENTES</span>
+                            <p class="opacity-80">Optimizer, Rizo Spray, Break Thru, Fulltec, Alquimia, Tropgreen.</p>
+                        </div>
+                        <div class="vademecum-card p-2 rounded">
+                            <span class="text-green-400 font-bold block">BIOESTIMULANTES</span>
+                            <p class="opacity-80">YaraVita, Nutrition Grow, Fosfito, Howler, Vitagrow.</p>
+                        </div>
+                        <div class="vademecum-card p-2 rounded">
+                            <span class="text-green-400 font-bold block">FUNGICIDAS</span>
+                            <p class="opacity-80">Cripton SC, Cripton Xpro.</p>
+                        </div>
+                        <div class="vademecum-card p-2 rounded">
+                            <span class="text-green-400 font-bold block">HERBICIDAS</span>
+                            <p class="opacity-80">Round Up, 2,4-D, Atrazina, Paraquat, Harness, Fierce, Cletodim.</p>
+                        </div>
+                        <div class="vademecum-card p-2 rounded">
+                            <span class="text-green-400 font-bold block">INSECTICIDAS</span>
+                            <p class="opacity-80">Solomon, Bifentrin, Starkle, Ampligo, Belt, Coragen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Central/Derecha: App -->
+            <div class="md:col-span-2 space-y-6">
+                <div class="glass-panel p-6 text-center">
+                    <h3 class="text-xl font-bold mb-6">ANALIZAR LOTE</h3>
+                    
+                    <div class="flex flex-col items-center justify-center border-2 border-dashed border-white/30 rounded-xl p-8 mb-6 cursor-pointer hover:border-green-500 transition-colors" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt text-4xl mb-3"></i>
+                        <p id="upload-text">Subí una imagen o usá la cámara</p>
+                        <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFile(this)">
+                        <img id="preview-img" class="hidden mt-4 shadow-lg mx-auto">
+                    </div>
+
+                    <button onclick="generateDiagnostic()" id="btn-generate" class="btn-primary w-full py-4 rounded-full font-bold text-lg shadow-lg hidden">
+                        🚀 GENERAR DIAGNÓSTICO
+                    </button>
+                </div>
+
+                <!-- Resultado -->
+                <div id="result-container" class="hidden">
+                    <div class="report-box p-6">
+                        <h4 class="font-bold text-green-800 border-b border-green-100 pb-2 mb-4">📋 INFORME PARA EL PRODUCTOR</h4>
+                        <div id="report-text" class="space-y-4 leading-relaxed">
+                            <!-- El texto de la IA irá aquí -->
+                        </div>
+                        
+                        <a id="whatsapp-link" href="#" target="_blank" class="btn-whatsapp w-full flex items-center justify-center p-4 rounded-full mt-6 font-bold transition-transform hover:scale-105">
+                            <i class="fab fa-whatsapp mr-2 text-xl"></i> ENVIAR POR WHATSAPP
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 text-center py-6 border-t border-white/10 opacity-70">
+            <p>Desarrollado por <b>IGNACIO DIAZ</b></p>
+        </footer>
+    </div>
+
+    <script>
+        function handleFile(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('preview-img');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    document.getElementById('upload-text').innerText = "Imagen cargada: " + file.name;
+                    document.getElementById('btn-generate').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function generateDiagnostic() {
+            const btn = document.getElementById('btn-generate');
+            const result = document.getElementById('result-container');
+            const reportText = document.getElementById('report-text');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ANALIZANDO...';
+            
+            setTimeout(() => {
+                result.classList.remove('hidden');
+                
+                const diagnostic = `
+                    <p><b>1. DIAGNÓSTICO:</b> Se observa presencia de malezas de hoja ancha y gramíneas en estadio inicial. El cultivo presenta buen vigor pero requiere intervención para evitar competencia.</p>
+                    <p><b>2. RECETA CLEMENTINA:</b> Mezcla sugerida: <b>Round Up</b> + <b>2,4-D</b> + <b>Optimizer</b> para mejorar la penetración y control.</p>
+                    <p><b>3. RECOMENDACIÓN TÉCNICA:</b> Aplicar con vientos menores a 10km/h. Calibrar boquillas para gotas medianas (200 micrones).</p>
+                    <p class="mt-4 text-sm italic">📌 Recordá que todos los productos mencionados se pueden comprar en <b>LA CLEMENTINA - SAN JORGE, SANTA FE</b>.</p>
+                `;
+                
+                reportText.innerHTML = diagnostic;
+                
+                const cleanText = reportText.innerText || reportText.textContent;
+                const encodedMsg = encodeURIComponent("🚜 *LA CLEMENTINA IA - INFORME TÉCNICO*\n\n" + cleanText);
+                document.getElementById('whatsapp-link').href = `https://wa.me/543406649346?text=${encodedMsg}`;
+                
+                btn.innerHTML = '✅ DIAGNÓSTICO FINALIZADO';
+                btn.style.background = '#1b5e20';
+                
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
