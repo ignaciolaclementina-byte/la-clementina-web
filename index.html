@@ -1,95 +1,134 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Clementina IA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+import streamlit as st
+import google.generativeai as genai
+from PIL import Image
+import urllib.parse
+
+# 1. TUS LLAVES DE API
+CLAVES = [
+    "AIzaSyD5BdXRFneGeQn9sG2qHip65dauBNbzKVw", 
+    "AIzaSyDxGWtHwsXp_dzsg6YnnU7OmPFBCU-_nEU"
+]
+
+# VADEMÉCUM DE PRODUCTOS
+VADEMECUM_CLEMENTINA = """
+ADHERENTES: Optimizer, Rizo Spray, Break Thru, Fulltec, Alquimia, Tropgreen.
+BIOESTIMULANTES: YaraVita, Nutrition Grow, Fosfito, Howler, Vitagrow.
+FUNGICIDAS: Cripton SC, Cripton Xpro.
+HERBICIDAS: Round Up, 2,4-D, Atrazina, Paraquat, Harness, Fierce, Cletodim.
+INSECTICIDAS: Solomon, Bifentrin, Starkle, Ampligo, Belt, Coragen.
+"""
+
+st.set_page_config(page_title="La Clementina IA", layout="centered")
+
+# 2. ESTILOS VISUALES
+st.markdown("""
     <style>
-        body {
-            background-color: #0e1117;
-            color: #ffffff;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        .card {
-            background: #1a1c23;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-        }
-        .resultado-blanco {
-            background-color: #ffffff;
-            color: #1a1a1a;
-            border-left: 8px solid #238636;
-        }
-        .btn-principal {
-            background-color: #238636;
-            transition: transform 0.2s;
-        }
-        .btn-principal:active {
-            transform: scale(0.98);
-        }
+    .stApp {
+        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                    url("https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=1920&auto=format&fit=crop");
+        background-size: cover !important;
+        background-attachment: fixed !important;
+    }
+    .titulo { color: white; text-align: center; font-size: 32px; font-weight: bold; text-shadow: 2px 2px 4px black; }
+    
+    /* Botones de carga en español */
+    section[data-testid="stFileUploadDropzone"] button { font-size: 0px !important; }
+    section[data-testid="stFileUploadDropzone"] button:after { content: "BUSCAR IMAGEN"; font-size: 16px !important; }
+    
+    .reporte-box {
+        background-color: white !important;
+        padding: 25px;
+        border-radius: 15px;
+        color: black !important;
+        border-left: 12px solid #2E7D32;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+    }
+    .reporte-box * { color: black !important; }
+    
+    .stButton>button {
+        width: 100%;
+        border-radius: 30px;
+        background-color: #2E7D32 !important;
+        color: white !important;
+        font-weight: bold;
+        height: 50px;
+    }
+    .btn-whatsapp {
+        display: block;
+        background-color: #25D366;
+        color: white !important;
+        padding: 15px;
+        border-radius: 30px;
+        text-decoration: none;
+        text-align: center;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    label, p { color: white !important; font-weight: bold; }
     </style>
-</head>
-<body class="flex flex-col min-h-screen p-4">
-    <main class="flex-grow max-w-lg mx-auto w-full pt-8">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold tracking-tight text-white">🚜 LA CLEMENTINA IA</h1>
-            <p class="text-gray-400 mt-1">San Jorge, Santa Fe</p>
-        </div>
+    """, unsafe_allow_html=True)
 
-        <div class="card p-6 shadow-xl">
-            <label class="block text-sm font-medium text-gray-300 mb-4 text-center">
-                Subí la foto del lote o maleza para analizar
-            </label>
-            
-            <input type="file" id="foto" class="block w-full text-sm text-gray-400
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-full file:border-0
-                file:text-sm file:font-semibold
-                file:bg-gray-700 file:text-gray-200
-                hover:file:bg-gray-600 mb-6">
+# 3. CABECERA
+st.markdown("<div class='titulo'>🚜 LA CLEMENTINA IA</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>San Jorge, Santa Fe</p>", unsafe_allow_html=True)
 
-            <button onclick="analizar()" id="btn-accion" class="btn-principal w-full py-4 rounded-xl font-bold text-lg">
-                🚀 GENERAR DIAGNÓSTICO
-            </button>
-        </div>
+# 4. INTERFAZ DE CARGA
+opcion = st.radio("SELECCIONÁ ORIGEN:", ["📸 CÁMARA", "📁 GALERÍA"], horizontal=True)
 
-        <div id="seccion-resultado" class="hidden mt-6 animate-pulse">
-            <div class="resultado-blanco p-5 rounded-xl shadow-2xl">
-                <h3 class="font-bold text-green-800 mb-2">INFORME TÉCNICO</h3>
-                <p id="texto-informe" class="text-sm leading-relaxed"></p>
-            </div>
+if opcion == "📸 CÁMARA":
+    foto = st.camera_input("") 
+else:
+    foto = st.file_uploader("Subí una imagen del lote", type=["jpg", "png", "jpeg"])
 
-            <a id="wa-link" href="#" target="_blank" class="flex items-center justify-center w-full bg-[#25D366] text-white font-bold py-4 rounded-xl mt-4 shadow-lg">
-                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.48 5.228 3.48 8.404c0 6.556-5.332 11.888-11.888 11.888-2.01 0-3.988-.511-5.741-1.483l-6.142 1.613zm6.275-3.328l.351.208c1.554.919 3.344 1.403 5.176 1.403 5.452 0 9.888-4.436 9.888-9.888 0-2.639-1.027-5.119-2.892-6.984s-4.345-2.892-6.984-2.892c-5.452 0-9.888 4.436-9.888 9.888 0 1.956.577 3.864 1.668 5.485l.228.341-1.011 3.693 3.784-.994z"/></svg>
-                ENVIAR AL PRODUCTOR
-            </a>
-        </div>
-    </main>
+if foto:
+    img_ready = Image.open(foto).convert('RGB')
+    st.image(img_ready, use_container_width=True)
+    
+    if st.button('🚀 GENERAR DIAGNÓSTICO'):
+        with st.spinner('Analizando muestra...'):
+            exito = False
+            for api_key in CLAVES:
+                try:
+                    genai.configure(api_key=api_key)
+                    modelos = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                    if not modelos: continue
+                    
+                    model = genai.GenerativeModel(modelos[0])
+                    
+                    # PROMPT OPTIMIZADO CON EL MENSAJE COMERCIAL
+                    prompt = f"""
+                    Actuá como un Ingeniero Agrónomo senior de San Jorge, Santa Fe. 
+                    Analizá la imagen y generá un informe profesional con este formato:
 
-    <footer class="text-center py-8 text-gray-500 text-xs">
-        Desarrollado por <span class="font-bold text-gray-400 text-sm italic">IGNACIO DIAZ</span>
-    </footer>
+                    1. **DIAGNÓSTICO**: Explicación técnica de lo observado.
+                    2. **RECETA CLEMENTINA**: Mezcla de tanque recomendada usando productos de: {VADEMECUM_CLEMENTINA}.
+                    3. **RECOMENDACIÓN TÉCNICA**: Consejos de aplicación (clima, boquillas o calidad de agua).
 
-    <script>
-        function analizar() {
-            const btn = document.getElementById('btn-accion');
-            btn.innerText = "⏳ ANALIZANDO MUESTRA...";
-            btn.disabled = true;
+                    Finalizá SIEMPRE con esta frase exacta:
+                    "📌 Recordá que todos los productos mencionados se pueden comprar en **LA CLEMENTINA - SAN JORGE, SANTA FE**."
+                    """
+                    
+                    response = model.generate_content([prompt, img_ready])
+                    informe = response.text
+                    
+                    st.session_state['reporte_actual'] = informe
+                    informe_html = informe.replace('\n', '<br>')
+                    
+                    st.markdown(f"<div class='reporte-box'><b>📋 INFORME PARA EL PRODUCTOR:</b><br><br>{informe_html}</div>", unsafe_allow_html=True)
+                    exito = True
+                    break 
+                except Exception:
+                    continue
 
-            setTimeout(() => {
-                const info = "DIAGNÓSTICO: Maleza detectada en estadio V3. Se recomienda aplicación inmediata.\n\nRECETA SUGERIDA: Mezcla de Herbicidas + Adherente Optimizer.\n\n📍 Insumos disponibles en sucursal San Jorge.";
-                
-                document.getElementById('texto-informe').innerText = info;
-                document.getElementById('seccion-resultado').classList.remove('hidden');
-                document.getElementById('seccion-resultado').classList.remove('animate-pulse');
-                
-                const waMsg = encodeURIComponent("🚜 *LA CLEMENTINA IA*\n\n" + info);
-                document.getElementById('wa-link').href = "https://wa.me/543406649346?text=" + waMsg;
-                
-                btn.innerText = "✅ ANÁLISIS COMPLETADO";
-            }, 2000);
-        }
-    </script>
-</body>
-</html>
+            if not exito:
+                st.error("⚠️ Sistema saturado. Por favor, reintentá en un minuto.")
+
+# 5. BOTÓN WHATSAPP CON NÚMERO DIRECTO
+if 'reporte_actual' in st.session_state:
+    texto_wa = urllib.parse.quote(f"🚜 *LA CLEMENTINA IA - INFORME TÉCNICO*\n\n{st.session_state['reporte_actual']}")
+    # Enlace directo a tu número
+    link_wa = f"https://wa.me/543406649346?text={texto_wa}"
+    st.markdown(f"<a href='{link_wa}' target='_blank' class='btn-whatsapp'>📲 ENVIAR POR WHATSAPP</a>", unsafe_allow_html=True)
+
+# 6. FIRMA
+st.markdown("<br><br><div style='text-align: center; color: white; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;'>Desarrollado por <b>IGNACIO DIAZ</b></div>", unsafe_allow_html=True)
